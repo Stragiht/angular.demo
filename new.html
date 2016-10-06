@@ -5,9 +5,10 @@
 	<title>新闻ionic</title>
 	 <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
 	 <!-- ionic的框架 -->
-	<script src="js/ionic.bundle.js"></script>
 	<!-- ionic的样式 -->
 	<link rel="stylesheet" href="css/ionic.css">
+	<script src="js/ionic.bundle.js"></script>
+	<script src="js/zepto.min.js"></script>
 
 </head>
 <body>
@@ -99,7 +100,7 @@
 			var obj = {
 				    templateUrl: 'directive/navs.html',
 				 	link: function($scope, ele, attr) {
-				 	ele.find('li').on('click',function(){
+				 	ele.find('li').on('top',function(){
 				 		// console.log(angular.element(this).attr('data'));
 				 		ele.find('li').removeClass('active');
 				 		angular.element(this).addClass('active');
