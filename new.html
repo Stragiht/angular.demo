@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+<head>
+	<meta charset="UTF-8">
+	<title>新闻ionic</title>
+	 <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+	 <!-- ionic的框架 -->
+	<script src="js/ionic.bundle.js"></script>
+	<!-- ionic的样式 -->
+	<link rel="stylesheet" href="css/ionic.css">
+
+</head>
+<body>
+
+	<ion-nav-view></ion-nav-view>
+</body>
+	<script>
+		var app = angular.module('myApp',['ionic']);
+		//路由嵌套
+		app.config(['$stateProvider','$urlRouterProvider',function($stateProvider,$urlRouterProvider) {
+			$stateProvider.state('/index',{
+				url:'/index',
+				templateUrl:'template/index.html',
+				controller:'indexCtrl'
+			}).state('/home',{
+				url:'/home/:id/:type',
+				templateUrl:'template/home.html',
+				controller:'homeCtrl'
+			})
+			$urlRouterProvider.when('','/index');
+		}])
+
+		//控制器
+		app.controller('indexCtrl', ['$scope','$http','$rootScope', function($scope,$http,$rootScope){
+			//数据请求
+			$http.jsonp('php/news.php',{
+				params:{
+					type:'top',
+					callback:'JSON_CALLBACK'
+				}
+			}).success(function(data){
+				$scope.arr = data.result.data;
+				$scope.arrs  = [];
+				for(var i = 0;i < 5; i++){
+					$scope.arrs.push($scope.arr[i]);
+				}
+				$rootScope.datas = $scope.arrs;
+
+			});
+			 $rootScope.title = 'top';
+		}])
+
+
+		app.controller('homeCtrl', ['$scope','$stateParams','$ionicLoading','$http','$sce',function($scope,$stateParams,$ionicLoading,$http,$sce){
+			// console.log($stateParams.id)
+			// console.log($stateParams.id)
+			 $ionicLoading.show({
+	 		 	template: "<ion-spinner icon='lines' class='spinner-calm'></ion-spinner>",
+	 		 	//让它没有背景
+	 		 	noBackdrop:true
+	 		 })
+	 		 $http.jsonp('php/news.php',{
+	 		 	params:{
+	 		 		type:$stateParams.type,
+	 		 		callback:'JSON_CALLBACK'
+	 		 	}
+	 		 }).success(function(data){
+	 		 	$scope.name = data.result.data[$stateParams.id].author_name;
+	 		 	$scope.title = data.result.data[$stateParams.id].title;
+	 		 	 $scope.url = data.result.data[$stateParams.id].url;
+	 		 	 $http.jsonp("php/urls.php",{
+					params:{
+						url:$scope.url,
+						callback:"JSON_CALLBACK"
+					}
+				}).success(function(data){
+					$ionicLoading.hide()
+				   console.log(data);
+				//([^>]*?) 表示只要字符串中没有>即可，而且捕获组是最短匹配；
+				//<article[^>]*>([\s\S]*?<\/article>)/g
+				//[\s\S]*? 0个字符，匹配任何字符前的位置。
+				 $scope.htmlsce = $sce.trustAsHtml(data.match(/<article[^>]*>([\s\S]*?)<\/article>/g)[0]);
+				})
+
+	 		 });
+
+		}])
+		//组件
+		app.directive('wheader',function(){
+			var obj = {
+				templateUrl:'directive/wheader.html'
+			}
+			return obj
+		})
+
+		//组件
+		app.directive('navs', ['$window','$http','$ionicLoading','$rootScope',function($window,$http,$ionicLoading,$rootScope){
+
+			var obj = {
+				    templateUrl: 'directive/navs.html',
+				 	link: function($scope, ele, attr) {
+				 	ele.find('li').on('click',function(){
+				 		// console.log(angular.element(this).attr('data'));
+				 		ele.find('li').removeClass('active');
+				 		angular.element(this).addClass('active');
+				 		 var title = angular.element(this).attr('data');
+				 			 $ionicLoading.show({
+				 		 	 template: "<ion-spinner icon='lines' class='spinner-calm'></ion-spinner>",
+				 		 	//让它没有背景
+				 		 	noBackdrop:true
+				 		 })
+				 		$rootScope.title = title;
+				 		console.log($scope.title)
+				 		 $http.jsonp('php/news.php',{
+				 		 	params:{
+				 		 		type:title,
+				 		 		callback:'JSON_CALLBACK'
+				 		 	}
+				 		 }).success(function(data){
+				 		 	 $ionicLoading.hide();
+				 		 	$scope.arr = data.result.data;
+							$scope.arrs  = [];
+							for(var i = 0;i < 5; i++){
+								$scope.arrs.push($scope.arr[i]);
+							}
+							$rootScope.datas = $scope.arrs;
+				 		 })
+
+				 	})
+				}
+			};
+			return obj
+		}]);
+
+		app.directive('content',['$window','$stateParams',function($window,$stateParams){
+			var obj = {
+				templateUrl:'directive/content.html',
+				link:function($scope,ele,attr){
+					$scope.Click = function(id,type){
+						console.log(type);
+						$window.location.href = '#/home/'+id+'/'+type;
+					}
+				}
+			}
+			return obj
+		}])
+		//注意 组件之间的scope是不一样的，数据是不应进行交互的，如果要进行交互必须要用rootscope
+		app.directive('wfooter',['$http','$ionicLoading','$rootScope',function($http,$ionicLoading,$rootScope){
+			var obj = {
+				templateUrl:'directive/wfooter.html',
+				link:function($scope,ele,attr){
+					$scope.loadMore = function(){
+
+						  $ionicLoading.show({
+				 		 	 template: "<ion-spinner icon='lines' class='spinner-calm'></ion-spinner>",
+				 		 	//让它没有背景
+				 		 	noBackdrop:true
+				 		 })
+						 $http.jsonp('php/news.php',{
+				 		 	params:{
+				 		 		type:$rootScope.title,
+				 		 		callback:'JSON_CALLBACK'
+				 		 	}
+				 		 }).success(function(data){
+				 		 	 $ionicLoading.hide();
+				 		 	 console.log($rootScope)
+							 $rootScope.datas = data.result.data;
+
+				 		 })
+					}
+				}
+			}
+
+			return obj
+		}])
+
+	</script>
+</html>

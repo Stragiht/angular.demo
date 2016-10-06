@@ -1,0 +1,7 @@
+<ion-list ng-repeat="data in datas">
+	<ion-item class = 'item-avatar' ng-click="Click($index,data.type?data.type:data.category)">
+		<img ng-src="{{data.thumbnail_pic_s}}" alt="">
+		<h2>{{data.title}}</h2>
+		<p>{{data.date}}&emsp;{{data.author_name}}</p>
+	</ion-item>
+</ion-list>
